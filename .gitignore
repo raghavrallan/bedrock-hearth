@@ -1,0 +1,9 @@
+data/
+.env
+*.log
+
+# Generated at runtime, holds local backup paths
+last-backup.json
+
+__pycache__/
+*.pyc

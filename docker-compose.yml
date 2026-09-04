@@ -1,0 +1,53 @@
+name: friends-smp
+
+services:
+  bedrock:
+    image: itzg/minecraft-bedrock-server:latest
+    container_name: friends-smp
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+    env_file:
+      - .env
+    environment:
+      EULA: "TRUE"
+      VERSION: LATEST
+      ENABLE_BDS_V6BIND_FIX: "true"
+      TZ: ${TZ:-Asia/Kolkata}
+      SERVER_PORT: ${SERVER_PORT:-19132}
+      SERVER_PORT_V6: ${SERVER_PORT:-19132}
+    ports:
+      - "${SERVER_PORT:-19132}:${SERVER_PORT:-19132}/udp"
+    volumes:
+      - mc-data:/data
+      - ./addons/veinminer:/data/behavior_packs/friends_smp_veinminer:ro
+    networks:
+      mcnet:
+        ipv4_address: 172.20.0.10
+    mem_limit: 4g
+    stop_grace_period: 60s
+
+  playit:
+    image: ghcr.io/playit-cloud/playit-agent:0.16
+    container_name: minecraft-playit
+    restart: unless-stopped
+    profiles: ["playit"]
+    environment:
+      SECRET_KEY: ${PLAYIT_SECRET_KEY:-}
+    networks:
+      mcnet:
+        ipv4_address: 172.20.0.11
+    depends_on:
+      - bedrock
+
+volumes:
+  mc-data:
+    name: minecraft-server_mc-data
+    external: true
+
+networks:
+  mcnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24

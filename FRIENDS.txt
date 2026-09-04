@@ -1,0 +1,17 @@
+How your friend joins (do NOT use the IPv6 address)
+
+1. You: keep this PC on, Docker running, Tailscale connected.
+2. Friend: install Tailscale
+   - Phone: Tailscale app from Play Store / App Store
+   - Windows: https://tailscale.com/download
+3. Friend signs in (Gmail / Microsoft is fine).
+4. You open https://login.tailscale.com/admin/machines
+   Share this PC (raghav-dev-lt) with their email, or invite them to your tailnet.
+5. Friend waits until they can see this PC in Tailscale.
+6. Friend opens Minecraft Bedrock → Play → Servers → Add Server
+
+   Server name: Friends SMP
+   Address: 100.86.171.3
+   Port: 19132
+
+You (same Wi-Fi) keep using: 192.168.1.4 port 19132

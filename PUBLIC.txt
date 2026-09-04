@@ -1,0 +1,14 @@
+Friends SMP — do not use the IPv6 address (it crashes / freezes)
+
+YOU (same Wi-Fi):
+Address: 192.168.1.4
+Port: 19132
+
+FRIEND (Gurgaon / internet):
+Install Tailscale, get invited to this PC, then:
+Address: 100.86.171.3
+Port: 19132
+
+See FRIENDS.txt for the full steps.
+Everyone needs a Microsoft / Xbox account.
+This PC + Docker + Tailscale must stay on.
