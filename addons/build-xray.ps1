@@ -1,7 +1,8 @@
 # Rebuilds the X-ray resource pack from addons/xray-blocks.txt.
 # Edit that list to hide more (or fewer) blocks, then re-run this.
-# Names must match vanilla Bedrock texture filenames exactly; see
-# github.com/Mojang/bedrock-samples -> resource_pack/textures/blocks.
+# Entries are paths relative to textures/blocks/, without .png
+# (e.g. "dirt" or "deepslate/deepslate"). Names must match vanilla
+# Bedrock texture paths from Mojang/bedrock-samples.
 
 $ErrorActionPreference = "Stop"
 Add-Type -AssemblyName System.Drawing
@@ -18,19 +19,25 @@ $McPack = Join-Path $Dist "friends-smp-xray.mcpack"
 if (-not (Test-Path $BlockList)) { throw "Missing block list: $BlockList" }
 if (-not (Test-Path (Join-Path $PackRoot "manifest.json"))) { throw "Missing manifest in $PackRoot" }
 
-$blocks = Get-Content $BlockList | Where-Object { $_.Trim() -and $_ -notmatch '^\s*#' }
+$blocks = Get-Content $BlockList | ForEach-Object { $_.Trim() } | Where-Object { $_ -and $_ -notmatch '^\s*#' }
+# Allow either "dirt" or legacy "dirt.png" in the list.
+$blocks = $blocks | ForEach-Object { $_ -replace '\.png$','' }
 $ores = $blocks | Where-Object { $_ -match "_ore|ancient_debris|gilded" }
 if ($ores) { throw "Block list contains ore textures, which would hide them: $($ores -join ', ')" }
 
+if (Test-Path $TexDir) { Remove-Item $TexDir -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $TexDir | Out-Null
-Get-ChildItem $TexDir -Filter *.png -ErrorAction SilentlyContinue | Remove-Item -Force
 
 $bmp = New-Object System.Drawing.Bitmap 16, 16, ([System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
 $g = [System.Drawing.Graphics]::FromImage($bmp)
 $g.Clear([System.Drawing.Color]::FromArgb(0, 0, 0, 0))
 $g.Dispose()
 foreach ($name in $blocks) {
-    $bmp.Save((Join-Path $TexDir $name.Trim()), [System.Drawing.Imaging.ImageFormat]::Png)
+    $rel = $name.Replace('/', [IO.Path]::DirectorySeparatorChar) + ".png"
+    $path = Join-Path $TexDir $rel
+    $parent = Split-Path $path -Parent
+    if (-not (Test-Path $parent)) { New-Item -ItemType Directory -Force -Path $parent | Out-Null }
+    $bmp.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
 }
 $bmp.Dispose()
 Write-Host "Generated $($blocks.Count) transparent textures."
