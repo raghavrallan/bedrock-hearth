@@ -20,6 +20,7 @@ from fields import FIELDS, GROUPS, KEYS
 ROOT = Path(__file__).resolve().parent.parent
 ENV_PATH = ROOT / ".env"
 INDEX_PATH = Path(__file__).resolve().parent / "index.html"
+XRAY_PACK = ROOT / "dist" / "friends-smp-xray.mcpack"
 HOST = os.environ.get("DASHBOARD_HOST", "0.0.0.0")
 PORT = int(os.environ.get("DASHBOARD_PORT", "8088"))
 COMPOSE = ["docker", "compose", "-f", str(ROOT / "docker-compose.yml")]
@@ -446,6 +447,19 @@ class Handler(BaseHTTPRequestHandler):
             body = INDEX_PATH.read_bytes()
             self.send_response(200)
             self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        if path == "/xray.mcpack":
+            # Served so a phone on the LAN can tap the link and let Minecraft import it.
+            if not XRAY_PACK.exists():
+                self._json(404, {"error": "X-ray pack not built. Run addons/build-xray.ps1."})
+                return
+            body = XRAY_PACK.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/octet-stream")
+            self.send_header("Content-Disposition", 'attachment; filename="friends-smp-xray.mcpack"')
             self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)

@@ -47,3 +47,17 @@ Either way you get a Windows notification, with the reason on failure. The same 
 ## Add-ons
 
 `addons/veinminer` is a behavior pack, bind-mounted into the container. Breaking one ore breaks the connected vein (capped per break). In the Nether it is limited to rare blocks such as ancient debris, quartz, and gilded blackstone. Note that Bedrock calls nether quartz ore `quartz_ore`, which the script normalizes.
+
+Because it is bind-mounted, an empty `addons/veinminer` folder means the script silently does not load. The startup log should show `Pack Stack - [00] Friends SMP Vein Miner`.
+
+`addons/xray` is a **resource pack**, so unlike the vein miner it changes rendering on the client, not the server. It replaces 76 bulk terrain textures (stone, dirt, deepslate, gravel, sand, netherrack, end stone) with transparent PNGs so ores stand out. All 21 ore textures are left alone, as are brick and tile variants so builds stay visible.
+
+Bedrock has no per-player resource packs: installing it on the server gives it to everyone who joins. It is currently **not** installed server-side. To use it yourself only, open the dashboard on your phone and tap the download link, or install `dist/friends-smp-xray.mcpack` directly. Turn **Smooth Lighting off** afterwards or ores render black.
+
+To change which blocks are hidden, edit `addons/xray-blocks.txt` and re-run:
+
+```powershell
+.\addons\build-xray.ps1
+```
+
+Texture names must match vanilla Bedrock filenames exactly — see [Mojang/bedrock-samples](https://github.com/Mojang/bedrock-samples/tree/main/resource_pack/textures/blocks). A wrong name fails silently, leaving the block solid. The build script refuses to run if the list contains an ore texture.
