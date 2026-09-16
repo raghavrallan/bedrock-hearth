@@ -1,10 +1,9 @@
-import { world, system, Player } from "@minecraft/server";
+import { world, system } from "@minecraft/server";
 
 const OWNER_TAG = "friends_owner";
 const OWNER_NAMES = new Set(["busyybeeee"]);
 
 const VEIN_BLOCKS = new Set([
-  // Overworld ores
   "minecraft:gold_ore",
   "minecraft:deepslate_gold_ore",
   "minecraft:iron_ore",
@@ -24,7 +23,13 @@ const VEIN_BLOCKS = new Set([
   "minecraft:deepslate_emerald_ore",
   "minecraft:obsidian",
   "minecraft:crying_obsidian",
-  // Nether rare only (no netherrack / basalt / soul sand etc.)
+  "minecraft:calcite",
+  "minecraft:amethyst_block",
+  "minecraft:budding_amethyst",
+  "minecraft:amethyst_cluster",
+  "minecraft:large_amethyst_bud",
+  "minecraft:medium_amethyst_bud",
+  "minecraft:small_amethyst_bud",
   "minecraft:nether_gold_ore",
   "minecraft:quartz_ore",
   "minecraft:nether_quartz_ore",
@@ -37,6 +42,13 @@ const QUARTZ_ORES = new Set([
   "minecraft:nether_quartz_ore",
 ]);
 
+const AMETHYST = new Set([
+  "minecraft:amethyst_cluster",
+  "minecraft:large_amethyst_bud",
+  "minecraft:medium_amethyst_bud",
+  "minecraft:small_amethyst_bud",
+]);
+
 const MAX_VEIN = 64;
 const DIRS = [
   [1, 0, 0],
@@ -47,124 +59,193 @@ const DIRS = [
   [0, 0, -1],
 ];
 
-function isOwnerPlayer(entity) {
-  if (!(entity instanceof Player)) return false;
+let registered = false;
+
+function nameOf(p) {
   try {
-    if (entity.hasTag(OWNER_TAG)) return true;
+    const n = String(p.name ?? "").trim().toLowerCase();
+    if (n) return n;
+  } catch {}
+  try {
+    return String(p.nameTag ?? "").trim().toLowerCase();
   } catch {
-    // tag API unavailable
-  }
-  const name = (entity.name || "").trim().toLowerCase();
-  return OWNER_NAMES.has(name);
-}
-
-function enableCoordinatesForAll() {
-  for (const id of ["overworld", "nether", "the_end"]) {
-    try {
-      world.getDimension(id).runCommand("gamerule showcoordinates true");
-    } catch {
-      // dimension may be unavailable
-    }
+    return "";
   }
 }
 
-function sameVeinBlock(block, typeId) {
+function isOwner(p) {
+  if (!p) return false;
+  try {
+    if (p.hasTag(OWNER_TAG)) return true;
+  } catch {}
+  const n = nameOf(p);
+  return !!(n && (OWNER_NAMES.has(n) || n.includes("busyy")));
+}
+
+function markOwner(p) {
+  if (!isOwner(p)) return;
+  try {
+    p.addTag(OWNER_TAG);
+  } catch {}
+}
+
+function posKey(x, y, z) {
+  return `${x}|${y}|${z}`;
+}
+
+/** Break with drops — never setType(air) (that deletes items). */
+function breakWithDrops(dim, x, y, z) {
+  const xi = Math.floor(x);
+  const yi = Math.floor(y);
+  const zi = Math.floor(z);
+  try {
+    dim.runCommand(`setblock ${xi} ${yi} ${zi} air destroy`);
+    return true;
+  } catch {}
+  try {
+    // Fallback: still prefer destroy-style if available
+    dim.runCommand(`/setblock ${xi} ${yi} ${zi} air destroy`);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function sameVein(block, typeId) {
   if (!block) return false;
   const id = block.typeId;
   if (id === typeId) return true;
   if (QUARTZ_ORES.has(id) && QUARTZ_ORES.has(typeId)) return true;
+  if (AMETHYST.has(id) && AMETHYST.has(typeId)) return true;
   return false;
 }
 
-function posKey(x, y, z) {
-  return `${x},${y},${z}`;
-}
-
-function veinMine(dimension, start, typeId) {
-  const queue = [{ x: start.x, y: start.y, z: start.z }];
-  const seen = new Set([posKey(start.x, start.y, start.z)]);
+function veinMine(dim, sx, sy, sz, typeId) {
+  const q = [{ x: sx, y: sy, z: sz }];
+  const seen = new Set([posKey(sx, sy, sz)]);
   const extra = [];
-
-  while (queue.length > 0 && extra.length < MAX_VEIN) {
-    const cur = queue.shift();
+  while (q.length && extra.length < MAX_VEIN) {
+    const c = q.shift();
     for (const [dx, dy, dz] of DIRS) {
-      const nx = cur.x + dx;
-      const ny = cur.y + dy;
-      const nz = cur.z + dz;
-      const k = posKey(nx, ny, nz);
+      const x = c.x + dx;
+      const y = c.y + dy;
+      const z = c.z + dz;
+      const k = posKey(x, y, z);
       if (seen.has(k)) continue;
       seen.add(k);
-      let block;
+      let b;
       try {
-        block = dimension.getBlock({ x: nx, y: ny, z: nz });
+        b = dim.getBlock({ x, y, z });
       } catch {
         continue;
       }
-      if (!sameVeinBlock(block, typeId)) continue;
-      extra.push({ x: nx, y: ny, z: nz });
-      queue.push({ x: nx, y: ny, z: nz });
+      if (!sameVein(b, typeId)) continue;
+      extra.push({ x, y, z });
+      q.push({ x, y, z });
     }
   }
+  for (const p of extra) breakWithDrops(dim, p.x, p.y, p.z);
+}
 
-  for (const loc of extra) {
+function normalizeOre(id) {
+  if (QUARTZ_ORES.has(id)) return "minecraft:quartz_ore";
+  if (AMETHYST.has(id)) return "minecraft:amethyst_cluster";
+  return id;
+}
+
+function handleBreak(player, typeId, x, y, z) {
+  if (!isOwner(player)) return;
+  markOwner(player);
+  if (!typeId) return;
+
+  try {
+    if (player.isSneaking) return;
+  } catch {}
+
+  let oreId = normalizeOre(typeId);
+  if (!VEIN_BLOCKS.has(oreId) && !VEIN_BLOCKS.has(typeId)) return;
+  if (!VEIN_BLOCKS.has(oreId)) oreId = typeId;
+
+  const sx = Math.floor(x);
+  const sy = Math.floor(y);
+  const sz = Math.floor(z);
+  const dim = player.dimension;
+
+  system.run(() => veinMine(dim, sx, sy, sz, oreId));
+}
+
+function onBreakBefore(event) {
+  try {
+    const player = event.player;
+    if (!isOwner(player)) return;
+    const block = event.block;
+    const typeId = block?.typeId || "";
+    const loc = block.location;
+    system.run(() => handleBreak(player, typeId, loc.x, loc.y, loc.z));
+  } catch (e) {
     try {
-      dimension.runCommand(`setblock ${loc.x} ${loc.y} ${loc.z} air destroy`);
-    } catch {
-      // skip unloaded chunks
+      console.warn("[veinminer] beforeBreak: " + e);
+    } catch {}
+  }
+}
+
+function onBreakAfter(event) {
+  try {
+    if (world.beforeEvents?.playerBreakBlock) return;
+    const player = event.player;
+    if (!isOwner(player)) return;
+    let typeId = "";
+    try {
+      typeId = event.brokenBlockPermutation?.type?.id || "";
+    } catch {}
+    if (!typeId) {
+      try {
+        typeId = event.brokenBlockPermutation?.typeId || "";
+      } catch {}
     }
+    const loc = event.block.location;
+    handleBreak(player, typeId, loc.x, loc.y, loc.z);
+  } catch (e) {
+    try {
+      console.warn("[veinminer] afterBreak: " + e);
+    } catch {}
   }
 }
 
-function onBreak(event) {
-  if (!isOwnerPlayer(event.player)) return;
-  let typeId = event.brokenBlockPermutation.type.id;
-  if (QUARTZ_ORES.has(typeId)) typeId = "minecraft:quartz_ore";
-  if (!VEIN_BLOCKS.has(typeId)) return;
-  try {
-    if (event.player.isSneaking) return;
-  } catch {
-    // older API without isSneaking
-  }
-  const loc = event.block.location;
-  const start = { x: Math.floor(loc.x), y: Math.floor(loc.y), z: Math.floor(loc.z) };
-  const dimension = event.dimension;
-  system.run(() => veinMine(dimension, start, typeId));
+function onSpawn(event) {
+  system.run(() => {
+    const p = event.player;
+    if (!isOwner(p)) return;
+    markOwner(p);
+  });
 }
 
-function clearLegacyGodEffects(player) {
-  if (!(player instanceof Player)) return;
-  const name = (player.name || "").trim().toLowerCase();
-  if (name !== "busyybeeee") return;
-  try {
-    player.removeTag("friends_god");
-  } catch {
-    // ignore
-  }
-  try {
-    const dim = player.dimension;
-    const n = player.name;
-    dim.runCommand(`effect "${n}" clear`);
-    for (const fx of ["resistance", "regeneration", "fire_resistance", "saturation", "absorption", "health_boost"]) {
-      dim.runCommand(`effect "${n}" ${fx} 0`);
-    }
-  } catch {
-    // ignore
-  }
-}
+function register() {
+  if (registered) return;
+  registered = true;
 
-function registerVeinMiner() {
-  enableCoordinatesForAll();
-  world.afterEvents.playerBreakBlock.subscribe(onBreak);
-  system.runInterval(enableCoordinatesForAll, 60);
+  if (world.beforeEvents?.playerBreakBlock) {
+    world.beforeEvents.playerBreakBlock.subscribe(onBreakBefore);
+  } else {
+    world.afterEvents.playerBreakBlock.subscribe(onBreakAfter);
+  }
+
   if (world.afterEvents.playerSpawn) {
-    world.afterEvents.playerSpawn.subscribe((event) => {
-      system.run(() => clearLegacyGodEffects(event.player));
-    });
+    world.afterEvents.playerSpawn.subscribe(onSpawn);
   }
+
+  system.runTimeout(() => {
+    for (const p of world.getAllPlayers()) {
+      if (isOwner(p)) markOwner(p);
+    }
+  }, 60);
+
+  try {
+    console.warn("[veinminer] v1.0.22 ores-only + destroy drops");
+  } catch {}
 }
 
+register();
 if (world.afterEvents.worldLoad) {
-  world.afterEvents.worldLoad.subscribe(registerVeinMiner);
-} else {
-  registerVeinMiner();
+  world.afterEvents.worldLoad.subscribe(register);
 }

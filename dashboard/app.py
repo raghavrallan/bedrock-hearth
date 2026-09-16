@@ -208,45 +208,21 @@ def recent_joins() -> list[dict]:
 
 
 def lan_addresses() -> dict[str, list[str]]:
+    # Pure Python — spawning PowerShell Get-NetIPAddress from the dashboard
+    # hangs on this machine and freezes /api/status.
     ipv4: list[str] = []
     ipv6: list[str] = []
     try:
-        ps = run(
-            [
-                "powershell",
-                "-NoProfile",
-                "-Command",
-                (
-                    "Get-NetIPAddress -AddressFamily IPv4 | "
-                    "Where-Object { $_.IPAddress -notlike '127.*' -and $_.PrefixOrigin -ne 'WellKnown' } | "
-                    "Select-Object -ExpandProperty IPAddress"
-                ),
-            ],
-            timeout=15,
-        )
-        for ip in ps.stdout.splitlines():
-            ip = ip.strip()
-            if ip and not ip.startswith("172.") and ip not in ipv4:
+        for info in socket.getaddrinfo(socket.gethostname(), None):
+            family, _, _, _, sockaddr = info
+            ip = sockaddr[0]
+            if family == socket.AF_INET:
+                if ip.startswith("127.") or ip.startswith("172.") or ip in ipv4:
+                    continue
                 ipv4.append(ip)
-    except Exception:
-        pass
-    try:
-        ps6 = run(
-            [
-                "powershell",
-                "-NoProfile",
-                "-Command",
-                (
-                    "Get-NetIPAddress -AddressFamily IPv6 -InterfaceAlias 'Wi-Fi' | "
-                    "Where-Object { $_.SuffixOrigin -eq 'Link' -and $_.PrefixOrigin -eq 'RouterAdvertisement' } | "
-                    "Select-Object -ExpandProperty IPAddress"
-                ),
-            ],
-            timeout=15,
-        )
-        for ip in ps6.stdout.splitlines():
-            ip = ip.strip()
-            if ip and ":" in ip:
+            elif family == socket.AF_INET6:
+                if ip.startswith("fe80") or ip in ipv6:
+                    continue
                 ipv6.append(ip)
     except Exception:
         pass

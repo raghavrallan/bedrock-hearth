@@ -2,9 +2,9 @@
   "format_version": 2,
   "header": {
     "name": "Friends SMP Vein Miner",
-    "description": "Break one ore to mine the connected vein. Sneak to mine a single block.",
+    "description": "v1.0.22 — ores only (with drops). No dirt/stone clear. Sneak = single block.",
     "uuid": "efe90958-d35f-4975-a769-955350f06217",
-    "version": [1, 0, 1],
+    "version": [1, 0, 22],
     "min_engine_version": [1, 21, 0]
   },
   "modules": [
@@ -13,13 +13,13 @@
       "language": "javascript",
       "uuid": "faf8bbcc-9622-491f-9e2f-28e92df255e9",
       "entry": "scripts/main.js",
-      "version": [1, 0, 0]
+      "version": [1, 0, 22]
     }
   ],
   "dependencies": [
     {
       "module_name": "@minecraft/server",
-      "version": "1.18.0"
+      "version": "2.10.0"
     }
   ]
 }

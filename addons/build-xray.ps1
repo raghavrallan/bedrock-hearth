@@ -1,4 +1,6 @@
 # Rebuilds the X-ray resource pack from addons/xray-blocks.txt.
+# Terrain blocks become faint + glowing wireframe outlines so ores stand out
+# without a solid black void (inventory and caves stay readable).
 # Edit that list to hide more (or fewer) blocks, then re-run this.
 # Entries are paths relative to textures/blocks/, without .png
 # (e.g. "dirt" or "deepslate/deepslate"). Names must match vanilla
@@ -28,10 +30,26 @@ if ($ores) { throw "Block list contains ore textures, which would hide them: $($
 if (Test-Path $TexDir) { Remove-Item $TexDir -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $TexDir | Out-Null
 
+# Fully clear center (see-through) + cyan glow rim only.
+# Do NOT use a dark fill — Bedrock shades it into solid black rocks.
+$clear = [System.Drawing.Color]::FromArgb(0, 0, 0, 0)
+$glowOuter = [System.Drawing.Color]::FromArgb(255, 40, 255, 220)
+$glowInner = [System.Drawing.Color]::FromArgb(180, 20, 220, 180)
 $bmp = New-Object System.Drawing.Bitmap 16, 16, ([System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
-$g = [System.Drawing.Graphics]::FromImage($bmp)
-$g.Clear([System.Drawing.Color]::FromArgb(0, 0, 0, 0))
-$g.Dispose()
+for ($y = 0; $y -lt 16; $y++) {
+    for ($x = 0; $x -lt 16; $x++) {
+        $outer = ($x -eq 0 -or $x -eq 15 -or $y -eq 0 -or $y -eq 15)
+        $inner = (-not $outer) -and ($x -eq 1 -or $x -eq 14 -or $y -eq 1 -or $y -eq 14)
+        if ($outer) {
+            $bmp.SetPixel($x, $y, $glowOuter)
+        } elseif ($inner) {
+            $bmp.SetPixel($x, $y, $glowInner)
+        } else {
+            $bmp.SetPixel($x, $y, $clear)
+        }
+    }
+}
+
 foreach ($name in $blocks) {
     $rel = $name.Replace('/', [IO.Path]::DirectorySeparatorChar) + ".png"
     $path = Join-Path $TexDir $rel
@@ -40,7 +58,7 @@ foreach ($name in $blocks) {
     $bmp.Save($path, [System.Drawing.Imaging.ImageFormat]::Png)
 }
 $bmp.Dispose()
-Write-Host "Generated $($blocks.Count) transparent textures."
+Write-Host "Generated $($blocks.Count) outline textures (faint fill + glow border)."
 
 New-Item -ItemType Directory -Force -Path $Dist | Out-Null
 if (Test-Path $McPack) { Remove-Item $McPack -Force }

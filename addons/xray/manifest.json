@@ -2,17 +2,17 @@
   "format_version": 2,
   "header": {
     "name": "Friends SMP X-Ray",
-    "description": "Hides bulk terrain (stone, dirt, deepslate, netherrack) so ores stand out. Ores, chests and player-built blocks stay visible.",
+    "description": "Terrain becomes faint cyan wireframes so ores stand out without a black void. Ores, chests and builds stay solid.",
     "uuid": "13b55bec-fc37-4a9b-86a3-8d54c11eb406",
-    "version": [1, 0, 1],
+    "version": [1, 0, 3],
     "min_engine_version": [1, 21, 0]
   },
   "modules": [
     {
-      "description": "Transparent terrain textures",
+      "description": "Outline terrain textures",
       "type": "resources",
       "uuid": "eb167606-5321-46cb-9a19-561d4cd453d9",
-      "version": [1, 0, 1]
+      "version": [1, 0, 3]
     }
   ]
 }
