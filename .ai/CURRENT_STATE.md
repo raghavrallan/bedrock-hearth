@@ -5,7 +5,7 @@
 - Docker Bedrock server + start/stop scripts
 - Local dashboard for all BDS settings + power + world rules
 - Daily/hourly backup with notifications and dashboard status
-- Vein miner behavior pack bind-mounted into container (v1.0.8: ores + mud clear up to 50)
+- Vein miner behavior pack bind-mounted into container (v1.0.26: ores + iron farm keeper `/friends:ironfarm`)
 - X-ray resource pack build + dashboard download (not forced on all players)
 - Tailscale join path documented in `FRIENDS.txt` / `PUBLIC.txt`
 

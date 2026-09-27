@@ -1,4 +1,5 @@
 import { world, system } from "@minecraft/server";
+import "./ironfarm.js";
 
 const OWNER_TAG = "friends_owner";
 const OWNER_NAMES = new Set(["busyybeeee"]);
@@ -241,7 +242,7 @@ function register() {
   }, 60);
 
   try {
-    console.warn("[veinminer] v1.0.22 ores-only + destroy drops");
+    console.warn("[veinminer] v1.0.26 ores-only + destroy drops");
   } catch {}
 }
 
