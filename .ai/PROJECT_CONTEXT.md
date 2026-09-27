@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Run a private **Friends SMP** Minecraft Bedrock world on this PC so friends can join over LAN or Tailscale without port-forwarding.
+Run a private **Bedrock Hearth** Minecraft Bedrock world on this PC so friends can join over LAN or Tailscale without port-forwarding. GitHub repo: `bedrock-hearth`.
 
 ## Stack
 

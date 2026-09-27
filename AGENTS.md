@@ -2,7 +2,7 @@
 
 ## What this is
 
-Personal Minecraft Bedrock Dedicated Server for friends, run via Docker on a Windows laptop. Remote join is via Tailscale (primary); playit.gg is optional.
+Public project name: **Bedrock Hearth** (`bedrock-hearth`). Personal Minecraft Bedrock Dedicated Server for friends, run via Docker on a Windows laptop. The live world may still be named Friends SMP in `.env`. Remote join is via Tailscale (primary); playit.gg is optional. Real join addresses belong in gitignored `JOIN.local.txt`.
 
 ## Before changing anything
 

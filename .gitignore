@@ -5,5 +5,8 @@ data/
 # Generated at runtime, holds local backup paths
 last-backup.json
 
+# This PC's real join addresses. FRIENDS.txt is the blank card.
+JOIN.local.txt
+
 __pycache__/
 *.pyc

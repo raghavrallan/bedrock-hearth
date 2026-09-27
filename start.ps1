@@ -39,8 +39,20 @@ if (-not $listening) {
 }
 Start-Process -FilePath "powershell" -WindowStyle Hidden -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSScriptRoot\backup-run.ps1`" -IfNeeded"
 
+$lan = ""
+try {
+    $lan = @(Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+        Where-Object {
+            $_.IPAddress -notlike "127.*" -and
+            $_.IPAddress -notlike "169.254.*" -and
+            $_.IPAddress -notlike "100.*"
+        } |
+        Select-Object -ExpandProperty IPAddress) | Select-Object -First 1
+} catch {}
+if (-not $lan) { $lan = "(this PC's IPv4)" }
+
 Write-Host ""
-Write-Host "Same Wi-Fi:  192.168.1.4   port 19132"
+Write-Host "Same Wi-Fi:  $lan   port 19132"
 Write-Host "Dashboard:   http://127.0.0.1:8088"
 if (Test-Path $playit) {
     Write-Host "Internet:    run playit attach, or check https://playit.gg/account/tunnels"

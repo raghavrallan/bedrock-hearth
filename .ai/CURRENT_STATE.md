@@ -7,7 +7,7 @@
 - Daily/hourly backup with notifications and dashboard status
 - Vein miner behavior pack bind-mounted into container (v1.0.26: ores + iron farm keeper `/friends:ironfarm`)
 - X-ray resource pack build + dashboard download (not forced on all players)
-- Tailscale join path documented in `FRIENDS.txt` / `PUBLIC.txt`
+- Tailscale join path documented in `FRIENDS.txt` / `JOIN.local.txt` (live addresses are gitignored)
 
 ## Uncommitted local changes (as of 2026-09-13)
 

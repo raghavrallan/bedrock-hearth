@@ -1,4 +1,4 @@
-How your friend joins (do NOT use the IPv6 address)
+How a friend joins (do NOT use the IPv6 address)
 
 1. You: keep this PC on, Docker running, Tailscale connected.
 2. Friend: install Tailscale
@@ -6,12 +6,15 @@ How your friend joins (do NOT use the IPv6 address)
    - Windows: https://tailscale.com/download
 3. Friend signs in (Gmail / Microsoft is fine).
 4. You open https://login.tailscale.com/admin/machines
-   Share this PC (raghav-dev-lt) with their email, or invite them to your tailnet.
+   Share this PC with their email, or invite them to your tailnet.
 5. Friend waits until they can see this PC in Tailscale.
 6. Friend opens Minecraft Bedrock → Play → Servers → Add Server
 
-   Server name: Friends SMP
-   Address: 100.86.171.3
+   Server name: (the SERVER_NAME in your .env)
+   Address: (this PC's Tailscale IPv4, usually 100.x.x.x)
    Port: 19132
 
-You (same Wi-Fi) keep using: 192.168.1.4 port 19132
+Same Wi-Fi: use this PC's LAN IPv4, still port 19132.
+start.ps1 prints the LAN address it finds.
+
+Put the real addresses in JOIN.local.txt (that file stays on this PC and is not committed).

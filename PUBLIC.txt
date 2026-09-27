@@ -1,12 +1,12 @@
-Friends SMP — do not use the IPv6 address (it crashes / freezes)
+Bedrock Hearth — do not use the IPv6 address (it crashes / freezes)
 
 YOU (same Wi-Fi):
-Address: 192.168.1.4
+Address: (this PC's LAN IPv4 — start.ps1 prints it)
 Port: 19132
 
-FRIEND (Gurgaon / internet):
+FRIEND (anywhere else):
 Install Tailscale, get invited to this PC, then:
-Address: 100.86.171.3
+Address: (this PC's Tailscale IPv4, usually 100.x.x.x)
 Port: 19132
 
 See FRIENDS.txt for the full steps.
